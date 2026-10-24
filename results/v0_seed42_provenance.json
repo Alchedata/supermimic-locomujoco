@@ -1,0 +1,70 @@
+{
+  "initialization": "continued at iteration 300 with restored model/optimizer and fresh replay",
+  "source_sha256": {
+    "convert_warm_start.py": "5f61cbe60101165322f34eb0a0cb8849fae53ca12a5f72b167e82965833337da",
+    "jax_constants_compat.py": "4656fd3571ee99c2862779798171675d2708900adf99a3c7e7768a8d2ba91509",
+    "scale_and_train.py": "dad19eddb95d03090c3b92fa9d87896a412b086b40f201bf82bf365b5db59e6f",
+    "preflight.py": "4a775a6290e765ff86411eee49cc7b5e019ad96a0a0bceb6a270f0d7b7e0fe8e",
+    "contacts.py": "ff40426bb84ff26c4cbe2fdb9aff73e874d59ab298ed234245a88069a76a8579",
+    "models.py": "0e12dfe921ad4056ac52f59ab7f6c5ecd701d06b168133259fdc7200251c69c9",
+    "preflight_task.py": "fdcee01023a3fec10388096ce2b79782e5b18667b088e442f346695bdd1abd19",
+    "curriculum.py": "8d4633fb38f3e1eb1ff290c914f8f569359e4602a475dd612fa682f6a599d94e",
+    "objective.py": "cc5eb12585ee5253b8cf9415b4986ce41275e618cf9918aa26345ea019a0bac7",
+    "evaluate.py": "97fcc3b1bb2e5c97e65e0b713caed86b22ca4e60a06e72524c68a91943f3dcb9",
+    "numerical_safety.py": "9798d65a106d9700c4098bca0334a502745b25e39cd4dba490bb28949757480d",
+    "check_alignment.py": "a7c09681245d11deac3126ad4d44c987f68c595dee0fd4281671d6fa2d45c64d",
+    "launch.py": "a3d66195f5630ae542e399b3dd37ef9a409ccd401a9101da19779d028f7f16da",
+    "adapter.py": "04c3daa46017ddb14f9c2c941df3d9fcdf2958907b09f24220f6280be73fac12",
+    "train_supermimic.py": "3342f4d0c37a03cb49fb5257d4b260d609e74e0758c8b733c8e0f0a1616b6625"
+  },
+  "model": {
+    "parameters": {
+      "world": 9541900,
+      "policy": 14479667,
+      "critic": 657153
+    },
+    "world_hidden": [
+      2048,
+      2048,
+      2048
+    ],
+    "policy_hidden": [
+      2048,
+      1024,
+      512,
+      256
+    ],
+    "critic_hidden": [
+      256,
+      128
+    ],
+    "history": 10,
+    "goal_frames": 10,
+    "BPTT": 32,
+    "world_window": 8,
+    "action_transform": "tanh_native_bounds"
+  },
+  "arguments": {
+    "seed": 42,
+    "num_envs": 4096,
+    "iterations": 20000,
+    "max_hours": 0.0,
+    "batch": 2048,
+    "buffer_steps": 1000,
+    "wm_batches": 10,
+    "warmup_iters": 0,
+    "eval_every": 1000,
+    "eval_horizon": 1000,
+    "eval_envs": 160,
+    "smoke": false,
+    "imagined_horizon": 32,
+    "adapt_iters": 0,
+    "wm_rehearsal_fraction": 0.0,
+    "capture_gradient_above": 10000.0,
+    "max_gradient_captures": 16,
+    "retain_eval_checkpoints": true,
+    "retain_every": 100,
+    "actor_batch": 4096,
+    "actor_microbatch": 512
+  }
+}

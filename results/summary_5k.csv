@@ -1,0 +1,11 @@
+method,seed,iteration,mean_return,error_m,failures,numerical_failures,full_horizon,episodes,evaluation_file,initialization
+v0,42,5000,818.4495551641152,0.13581144215954405,2,0,154,160,v0_seed42_iter5000.json,continued at iteration 300 with restored model/optimizer and fresh replay
+experts,42,5000,860.0596639945707,0.10869924381128948,0,0,156,160,experts_seed42_iter5000.json,from scratch
+sensitivity,42,5000,813.4950357896756,0.12834782958452978,1,0,155,160,sensitivity_seed42_iter5000.json,from scratch
+trust,42,5000,814.2524747884194,0.09226031572366779,15,0,141,160,trust_seed42_iter5000.json,from scratch
+baseline,43,5000,858.832357131889,0.09322050437735772,2,0,154,160,baseline_seed43_iter5000.json,from scratch
+experts,43,5000,863.2273938359818,0.09494634670263424,2,0,154,160,experts_seed43_iter5000.json,from scratch
+baseline,44,5000,811.367481936082,0.09368233620381501,17,0,139,160,baseline_seed44_iter5000.json,from scratch
+experts,44,5000,149.72079972266934,0.5327990877101607,35,0,123,160,experts_seed44_iter5000.json,from scratch
+head_reset,44,5000,812.6319745671103,0.11309474353683258,2,0,154,160,head_reset_seed44_iter5000.json,Expert seed 44 iteration 1000; output head scaled 0.1; head Adam moments reset; fresh replay
+head_reset_antisat,44,5000,797.1713820939783,0.120239579646269,0,0,156,160,head_reset_antisat_seed44_iter5000.json,same head reset; anti-saturation weight 0.01; threshold 2; fresh replay

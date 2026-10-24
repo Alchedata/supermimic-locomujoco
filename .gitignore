@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+external/
+cache/
+runs/
+data/
+wandb/
+*.pkl
+*.npz
+*.mp4
+.env
+configs/variables.yaml
+

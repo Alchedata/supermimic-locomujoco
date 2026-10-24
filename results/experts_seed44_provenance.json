@@ -1,0 +1,74 @@
+{
+  "initialization": "from scratch",
+  "source_sha256": {
+    "jax_constants_compat.py": "4656fd3571ee99c2862779798171675d2708900adf99a3c7e7768a8d2ba91509",
+    "idea_models.py": "d1dc2c264ad8868316efcf81d923a3318b420630af56429cfa133a6af4878abc",
+    "resume_no_thp.py": "3b0899bb03f4706ee525105402ec4787d72cc8ef4e4870312ef2db93ec97556a",
+    "models.py": "0e12dfe921ad4056ac52f59ab7f6c5ecd701d06b168133259fdc7200251c69c9",
+    "curriculum.py": "8d4633fb38f3e1eb1ff290c914f8f569359e4602a475dd612fa682f6a599d94e",
+    "objective.py": "cc5eb12585ee5253b8cf9415b4986ce41275e618cf9918aa26345ea019a0bac7",
+    "evaluate.py": "97fcc3b1bb2e5c97e65e0b713caed86b22ca4e60a06e72524c68a91943f3dcb9",
+    "video_all40.py": "287194c73e23dbc5612a693e29fa79327a07bc88b81ef540700a73fa039863fa",
+    "profile_training.py": "d6027fd0974f44e58b2752cfeec34d27d35bdd3855e8d447ba305cb9a630a1d6",
+    "numerical_safety.py": "9798d65a106d9700c4098bca0334a502745b25e39cd4dba490bb28949757480d",
+    "check_alignment.py": "a7c09681245d11deac3126ad4d44c987f68c595dee0fd4281671d6fa2d45c64d",
+    "adapter.py": "04c3daa46017ddb14f9c2c941df3d9fcdf2958907b09f24220f6280be73fac12",
+    "train_supermimic.py": "2137f9dfd6f1c69b77bff41f0cc27c350b34705b80a49da0ac465b4f27e3f9a5"
+  },
+  "model": {
+    "parameters": {
+      "world": 9545779,
+      "policy": 14479667,
+      "critic": 657153
+    },
+    "idea": "experts",
+    "world_hidden": [
+      2007,
+      2007,
+      2007
+    ],
+    "policy_hidden": [
+      2048,
+      1024,
+      512,
+      256
+    ],
+    "critic_hidden": [
+      256,
+      128
+    ],
+    "history": 10,
+    "goal_frames": 10,
+    "BPTT": 32,
+    "world_window": 8,
+    "action_transform": "tanh_native_bounds"
+  },
+  "arguments": {
+    "seed": 44,
+    "num_envs": 4096,
+    "iterations": 5000,
+    "max_hours": 0.0,
+    "batch": 2048,
+    "buffer_steps": 1000,
+    "wm_batches": 10,
+    "warmup_iters": 0,
+    "eval_every": 1000,
+    "eval_horizon": 1000,
+    "eval_envs": 160,
+    "smoke": false,
+    "imagined_horizon": 32,
+    "adapt_iters": 0,
+    "wm_rehearsal_fraction": 0.0,
+    "capture_gradient_above": 10000.0,
+    "max_gradient_captures": 8,
+    "retain_eval_checkpoints": true,
+    "retain_every": 100,
+    "actor_batch": 4096,
+    "actor_microbatch": 512,
+    "idea": "experts",
+    "sensitivity_weight": 0.1,
+    "sensitivity_epsilon": 0.02,
+    "branch_every": 80,
+    "trust_scale": 0.05
+  }
+}
