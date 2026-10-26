@@ -1,0 +1,88 @@
+{
+  "run_id": "fullstate_euler_as_lafan1_all40_n4096_h32_5k_seed44_fast_20261026",
+  "evaluation_sha256": "ba1b1d76152a900a5cd3602919e4111d07d35d11861c29e7b1b6132966ffe091",
+  "args": {
+    "seed": 44,
+    "num_envs": 4096,
+    "iterations": 5000,
+    "max_hours": 0.0,
+    "batch": 2048,
+    "buffer_steps": 1000,
+    "wm_batches": 10,
+    "warmup_iters": 0,
+    "eval_every": 1000,
+    "eval_horizon": 1000,
+    "eval_envs": 160,
+    "smoke": false,
+    "imagined_horizon": 32,
+    "adapt_iters": 0,
+    "wm_rehearsal_fraction": 0.0,
+    "capture_gradient_above": 10000.0,
+    "max_gradient_captures": 16,
+    "retain_eval_checkpoints": true,
+    "retain_every": 100,
+    "actor_batch": 4096,
+    "actor_microbatch": 1024,
+    "solver": "euler",
+    "world_width": 2158,
+    "saturation_weight": 0.01,
+    "saturation_threshold": 1.0
+  },
+  "model": {
+    "parameters": {
+      "world": 10006672,
+      "policy": 14479667,
+      "critic": 657153
+    },
+    "world_hidden": [
+      2158,
+      2158,
+      2158
+    ],
+    "solver": "euler",
+    "physical_state_dim": 51,
+    "world_loss_space": "physical_qpos_qvel_51",
+    "analytic_observation_head": true,
+    "policy_hidden": [
+      2048,
+      1024,
+      512,
+      256
+    ],
+    "critic_hidden": [
+      256,
+      128
+    ],
+    "history": 10,
+    "goal_frames": 10,
+    "BPTT": 32,
+    "world_window": 8,
+    "action_transform": "tanh_native_bounds",
+    "world_input_state_dim": 267,
+    "world_input_action_dim": 19,
+    "world_input_features": "canonical differentiable FK, successor reused at next field; midpoint intermediate fresh",
+    "fk_reuse": true,
+    "actor_microbatch": 1024,
+    "gradient_accumulation": "python",
+    "world_output_acceleration_dim": 25
+  },
+  "source_sha256": {
+    "ode_world.py": "edb1e5c6d96cdfc4386b84c8351ad6cead0e3a9ec79b54204a81d72ae893ffc8",
+    "train_supermimic.py": "372483f632991ac487a32e9fe9bdcdae178bb1e237d4ed55788c8b0af1a40cf9",
+    "dynamics_diagnostics.py": "38a662c94ea914c0d5d1d1f51e03c248777a38bedb5e66bf8ad9df8d6d9b6b95",
+    "preflight_ode.py": "c762a30c61cd2340b9a7235984f98f85be90b1f4ec9f3428a77392560e398dff",
+    "numerical_safety.py": "9798d65a106d9700c4098bca0334a502745b25e39cd4dba490bb28949757480d",
+    "models.py": "0e12dfe921ad4056ac52f59ab7f6c5ecd701d06b168133259fdc7200251c69c9",
+    "objective.py": "cc5eb12585ee5253b8cf9415b4986ce41275e618cf9918aa26345ea019a0bac7",
+    "curriculum.py": "8d4633fb38f3e1eb1ff290c914f8f569359e4602a475dd612fa682f6a599d94e",
+    "adapter.py": "04c3daa46017ddb14f9c2c941df3d9fcdf2958907b09f24220f6280be73fac12",
+    "smoke_antisat.py": "7e755902183b0cf152b4410e0c2a10476384ea10e25fe9db82619bf7551c57a7",
+    "evaluate.py": "97fcc3b1bb2e5c97e65e0b713caed86b22ca4e60a06e72524c68a91943f3dcb9",
+    "jax_constants_compat.py": "4656fd3571ee99c2862779798171675d2708900adf99a3c7e7768a8d2ba91509"
+  },
+  "fk_reuse": true,
+  "fresh_training": true,
+  "state_input_dim": 267,
+  "training_transitions": 51200000,
+  "warmup_transitions": 262144
+}

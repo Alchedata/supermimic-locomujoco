@@ -25,6 +25,7 @@ import jax.numpy as jnp
 from adapter import Adapter, make_config, make_env
 from evaluate import evaluate
 from models import Policy
+from actions import TRANSFORMS, policy_action
 
 ck = pickle.loads(a.checkpoint.read_bytes())
 cfg = make_config(a.upstream, 160)
@@ -34,13 +35,13 @@ pi = Policy(ad.na)
 mean, std = (jnp.asarray(ck['norm'][k]) for k in ['mean', 'std'])
 lo, hi = (jnp.asarray(v) for v in [ad.env.info.action_space.low, ad.env.info.action_space.high])
 transform = ck['action_transform']
-assert transform in ['tanh_native_bounds', 'linear_native_clip_collection'], transform
+assert transform in TRANSFORMS, transform
 
 @jax.jit
 def act(h, g, obs, x):
     ng = ((g.reshape(g.shape[0], 10, ad.gd) - mean[2:ad.observation_state_dim]) /
           std[2:ad.observation_state_dim]).reshape(g.shape)
     raw = pi.apply(ck['pp'], (h - ad.obs(mean)) / ad.obs(std), ng)
-    return raw if transform == 'linear_native_clip_collection' else (lo+hi)/2 + (hi-lo)/2*jnp.tanh(raw)
+    return policy_action(raw, lo, hi, transform)
 
 evaluate(ad, act, a.out, f'iter_{ck["iteration"]}', n=160, horizon=1000)

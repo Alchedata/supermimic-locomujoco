@@ -30,10 +30,14 @@ Training uses one actor update, ten WM updates and twenty critic updates per ite
 
 Let `u` be the last linear decoder output and `[low, high]` the native action bounds.
 
-- Historical mode: `a = (low+high)/2 + (high-low)/2 * tanh(u)`.
-- Linear mode: `a = u`.
+- Historical tanh mode: `command = (low+high)/2 + (high-low)/2 * tanh(u)`.
+- Linear mode: `command = u`.
 
-Both modes collect real training data with `clip(a + Gaussian(0, 0.1), low, high)`. Deterministic evaluation sends `a` to the native control interface. Imagined rollouts send `a` to the WM without collection noise or an extra clip. The native out-of-bounds reward penalty is retained. Consequently the linear ablation also exposes the existing difference between clipped collection actions and unbounded imagined actions; its logs include the out-of-bounds fraction.
+Real collection executes `clip(command + Gaussian(0, 0.1), low, high)` and replay stores that exact action. Imagined rollouts and deterministic evaluation both use `clip(command, low, high)`. `supermimic/actions.py` defines the shared mapping. H1 uses normalized torque commands with bounds [-1, 1]; the simulator converts them to actuator units. Native reward code and exploration noise are unchanged.
+
+The first linear experiment used raw commands in imagination and evaluation despite clipped collection. It failed at iteration 140. That historical interface remains available with `--action-interface legacy`; checkpoint metadata distinguishes `linear_native_clip_collection` from the corrected `linear_native_clip_all`. The evaluation script follows the saved metadata.
+
+Hard clipping has zero action gradient outside the bounds. A separate fresh Expert ablation adds `0.01 * mean(relu(abs(u) - 1)**2)` at real replay starts to supply a restoring gradient. The primary aligned Expert run has zero auxiliary weight. A fresh aligned MLP run controls for the Expert structure. All three use seed 44 and the same 5k training budget, reward and evaluation protocol.
 
 The goal-latent `tanh` is unchanged. SuperMimic Appendix C, Table A.4 explicitly bounds the latent with `tanh` and lists an MLP action decoder. It does not specify a final action activation. The two public reproductions cited in the README use a linear final decoder layer. Our historical action-output `tanh` is a port choice.
 
@@ -53,3 +57,13 @@ This is our fixed evaluation protocol for the port, not a claim that LocoMuJoCo 
 `--iterations` is an absolute target, so resuming at 1000 with `--iterations 5000` performs 4000 additional iterations. Parameters, Adam state, normalization, RNG and curriculum are restored. Replay and live simulator state are rebuilt, with 64 refill steps. The run writes `restore_check.json` and the parent checkpoint SHA-256.
 
 Head-reset and no-change continuation controls use this same refill procedure. Their replay contents can differ because their restored policies differ.
+
+## ODE result provenance and compute
+
+The completed full-state Euler results cover seeds42,43,44 with AS weights0 and0.01. Completed Midpoint results currently cover seed42 for both AS settings. Each `results/ode_*_provenance.json` includes exact training arguments, source hashes, model dimensions, and the SHA256 of its evaluation file. The three-seed accelerated Midpoint campaign is still running and is excluded from completed tables.
+
+All ODE runs start from scratch. Seed42 results use actor microbatch512 and the original FK implementation; Euler seeds43/44 use microbatch1024 and differentiable successor-FK reuse. All use actor batch4096, horizon32, the same WM/critic update counts, and the same real-data budget. The public launcher defaults to the accelerated implementation for new ODE runs. It does not claim to reproduce an old floating-point trajectory bit for bit.
+
+At5k there are51,200,000 collection transitions plus262,144 warmup transitions. Reported Return is mean over160 episodes, not the sum. Its fixed-horizon theoretical ceiling is1600 (1000 controls times reward ceiling1.6). Dividing by1600 gives a normalized return, not a success rate. Do not divide by each episode's observed survival length when comparing total task performance.
+
+Runtime figures exclude first-iteration JIT compilation and periodic evaluation. The published fixed-batch actor benchmark found FK reuse faster; JIT-scan gradient accumulation was about1% slower and is not used. Long-run accelerated Euler timings are about2.35–2.44 seconds/iteration on L40S. Early Midpoint timings are3.63–3.69 seconds/iteration. Full training wall time also includes initialization, evaluation, diagnostics and checkpoint writes.

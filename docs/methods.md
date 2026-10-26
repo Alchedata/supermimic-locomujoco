@@ -25,4 +25,16 @@ Expert seed 44's tanh-output run plateaued near return 150. At iteration 1000, a
 
 The shared Adam counter is preserved. No other network weights are reset. The third treatment changes the actor objective only; environment reward, critic targets and WM loss are unchanged.
 
-The fresh linear-output run tests removal of the final action tanh while keeping the latent tanh. It uses the same seed and 5k budget. These experiments investigate a failure observed in this port; the README reports completed results without assigning it to the original SuperMimic implementation.
+The fresh linear-output runs keep the latent tanh and use the aligned execution mapping described in [protocol.md](protocol.md). The three controls are Expert, Expert plus the raw-output penalty with threshold 1 and weight 0.01, and the baseline MLP. All start from scratch with seed 44 and a 5k budget. The first linear run, which fed unbounded commands into the WM, is retained as a failed interface experiment.
+
+## Full-State ODE and anti-saturation
+
+`--method ode --solver euler|midpoint` selects the structured world model. Both integrators receive all267 state features and19 actions, predict25 generalized accelerations, integrate26 qpos and25 qvel coordinates, and reconstruct body-site features through differentiable FK. The root quaternion is updated on the rotation manifold and normalized. The WM has10,006,672 parameters; actor and critic match the baseline.
+
+The WM loss is autoregressive physical51 prediction MSE (normalized by delta standard deviation) plus termination BCE over8 steps. Body features are analytic, not independent neural outputs. The actor optimizes32-step imagined rewards plus critic bootstrap, weighted by learned survival probabilities.
+
+For Euler, q_next integrates current velocity and v_next = v + dt * acceleration. Midpoint evaluates acceleration again at a half-step physical state, then integrates with midpoint velocity/acceleration. It uses two field evaluations per step.
+
+The accelerated implementation reuses canonical successor FK at the next field input, while retaining fresh intermediate-state FK for Midpoint. Initial field features are rebuilt from the replay physical state; the initial critic input/history are unchanged. No stop-gradient is introduced. WM supervised training retains its original FK path.
+
+AS adds `weight * mean(relu(abs(u) - threshold)^2)` at real replay starts. Current ODE experiments use weight0.01 and threshold1; the no-AS control uses weight0. This adds a restoring gradient directly on the raw output rather than relying on the derivative of tanh near saturation. The results establish a useful intervention on seed43; per-episode causal diagnosis of individual failures is separate from aggregate failure counts.

@@ -23,6 +23,7 @@ from idea_models import TrustWorld,ExpertWorld
 from evaluate import evaluate
 from numerical_safety import state_valid,history_valid,LIMITS
 from curriculum import ReturnCurriculum
+from actions import policy_command,executed_action,policy_action
 
 OBJECTIVE_VERSION='loco_native_aligned_v0'
 
@@ -97,6 +98,8 @@ def main():
     p.add_argument('--saturation-weight',type=float,default=0.)
     p.add_argument('--saturation-threshold',type=float,default=2.)
     p.add_argument('--action-output',choices=['tanh','linear'],default='tanh')
+    p.add_argument('--action-interface',choices=['aligned','legacy'],default='aligned',
+                   help='Legacy preserves the historical raw-linear imagination interface')
     p.add_argument('--iterations',type=int,default=8000);p.add_argument('--max-hours',type=float,default=1.5)
     p.add_argument('--batch',type=int,default=512);p.add_argument('--buffer-steps',type=int,default=512)
     p.add_argument('--wm-batches',type=int,default=10);p.add_argument('--warmup-iters',type=int,default=0)
@@ -124,7 +127,9 @@ def main():
     p.add_argument('--trust-scale',type=float,default=.05,
                    help='Disagreement RMS in state-standard-deviation units')
     a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
-    action_transform='tanh_native_bounds' if a.action_output=='tanh' else 'linear_native_clip_collection'
+    action_transform=('tanh_native_bounds' if a.action_output=='tanh' else
+                      'linear_native_clip_all' if a.action_interface=='aligned' else
+                      'linear_native_clip_collection')
     assert a.wm_rehearsal_fraction==0
     assert a.actor_batch%a.actor_microbatch==0
     if (out/'latest.pkl').exists():raise RuntimeError('Existing run: explicit resume implementation is required')
@@ -163,8 +168,9 @@ def main():
     action_lo=jnp.asarray(ad.env.info.action_space.low)
     action_hi=jnp.asarray(ad.env.info.action_space.high)
     def bounded(raw):
-        if a.action_output=='linear':return raw
-        return (action_lo+action_hi)/2+(action_hi-action_lo)/2*jnp.tanh(raw)
+        return policy_action(raw,action_lo,action_hi,action_transform)
+    def command(raw):
+        return policy_command(raw,action_lo,action_hi,a.action_output)
     rng=np.random.default_rng(a.seed);key=jax.random.PRNGKey(a.seed)
     if previous:
         rng.bit_generator.state=previous['numpy_rng'];key=jnp.asarray(previous['key'])
@@ -193,8 +199,8 @@ def main():
             pm,ps=map(jnp.asarray,(previous['norm']['mean'],previous['norm']['std']))
             gh=ad.goal(tid,f,K)
             ng=((gh.reshape(a.num_envs,K,ad.gd)-pm[2:ad.observation_state_dim])/ps[2:ad.observation_state_dim]).reshape(gh.shape)
-            center=bounded(refill_pi.apply(previous['pp'],(h-ad.obs(pm))/ad.obs(ps),ng))
-        action=jnp.clip(center+.1*jax.random.normal(nextkey(),(a.num_envs,ad.na)),action_lo,action_hi)
+            center=command(refill_pi.apply(previous['pp'],(h-ad.obs(pm))/ad.obs(ps),ng))
+        action=executed_action(center,action_lo,action_hi,.1*jax.random.normal(nextkey(),(a.num_envs,ad.na)))
         ready,tr=ad.train_step(state,action,jnp.asarray(curriculum.probs)) if previous else ad.step(state,action)
         x1,t1,f1,r,absorbing,done,valid=tr
         replay.add(x=x,x1=x1,a=action,tid=tid,f=f,r=r,absorbing=absorbing,done=done,h=h,valid=valid,bad_count=state.bad_count)
@@ -302,7 +308,7 @@ def main():
         swapped,_=world_step(w,b['x'][:,0],jnp.roll(b['a'][:,0],1,axis=0))
         return mse,persistence,average(((swapped-b['x1'][:,0])/std)**2)
     @jax.jit
-    def actor(p,hh,tt,ff):return bounded(pi.apply(p,normh(hh),normg(ad.goal(tt,ff,K))))
+    def actor(p,hh,tt,ff):return command(pi.apply(p,normh(hh),normg(ad.goal(tt,ff,K))))
     def value(v,xx,tt,ff,bc):
         cx=normx(xx)
         return critic.apply(v,cx,normg(ad.goal(tt,ff,K)))
@@ -341,7 +347,7 @@ def main():
         (endx,_,endf,survival,total,end_bc),tr=jax.lax.scan(one,(xx,hh,ff,jnp.ones(xx.shape[0]),jnp.zeros(xx.shape[0]),bc),jnp.arange(H))
         bootstrap=value(v,endx,tt,endf,end_bc)
         total=total+.99**H*survival*bootstrap
-        # Direct pre-tanh regularizer on real replay starts. It does not alter
+        # Direct raw-output regularizer on real replay starts. It does not alter
         # environment reward, imagined rewards, termination, or critic targets.
         raw=pi.apply(p,normh(b['h']),normg(ad.goal(tt,b['f'][:,0],K)))
         penalty=jnp.mean(jax.nn.relu(jnp.abs(raw)-a.saturation_threshold)**2)
@@ -409,7 +415,7 @@ def main():
     for _ in range(1+64+3):validation_key,_=jax.random.split(validation_key)
     for _ in range(16):
         validation_key,vk=jax.random.split(validation_key)
-        aa=jnp.clip(.1*jax.random.normal(vk,(a.num_envs,ad.na)),action_lo,action_hi);bc=vs.bad_count;vs,tr=ad.step(vs,aa)
+        aa=executed_action(.1*jax.random.normal(vk,(a.num_envs,ad.na)),action_lo,action_hi);bc=vs.bad_count;vs,tr=ad.step(vs,aa)
         xn,tn,fn,rr,ab,dd,valid=tr
         val.add(x=vx,x1=xn,a=aa,tid=vt,f=vf,r=rr,absorbing=ab,done=dd,h=vh,valid=valid,bad_count=bc)
         vx,vt,vf=ad.extract(vs);vh=jnp.where(dd[:,None,None],jnp.repeat(ad.obs(vx)[:,None],hist,axis=1),jnp.concatenate([vh[:,1:],ad.obs(vx)[:,None]],1))
@@ -483,21 +489,28 @@ def main():
             corr=jnp.mean(centered_d*centered_e)/jnp.maximum(jnp.std(disagreement)*jnp.std(error),1e-8)
             return {'confidence_mean':trust.mean(),'disagreement_rms_mean':disagreement.mean(),
                     'disagreement_error_correlation':corr}
-        if a.idea=='experts':
-            route=wm.apply(w,normx(xx),method=wm.routing)
-            usage=route.mean(0)
+        if a.idea in ['baseline','experts']:
             raw=pi.apply(p,normh(b['h']),normg(ad.goal(b['tid'][:,0],b['f'][:,0],K)))
             u=(bounded(raw)-(action_lo+action_hi)/2)/((action_hi-action_lo)/2)
             derivative=1-jnp.tanh(raw)**2 if a.action_output=='tanh' else jnp.ones_like(raw)
-            return {'action_saturation_099':jnp.mean(jnp.abs(u)>.99),
+            if action_transform=='linear_native_clip_all':
+                derivative=jnp.where((raw>action_lo)&(raw<action_hi),1.,
+                                     jnp.where((raw==action_lo)|(raw==action_hi),.5,0.))
+            metrics={'action_saturation_099':jnp.mean(jnp.abs(u)>.99),
                     'action_saturation_095':jnp.mean(jnp.abs(u)>.95),
                     'raw_action_absmax':jnp.max(jnp.abs(raw)),
                     'raw_action_absmean':jnp.mean(jnp.abs(raw)),
                     'action_output_derivative_mean':jnp.mean(derivative),
+                    'raw_action_out_of_bounds_fraction':jnp.mean((command(raw)<action_lo)|(command(raw)>action_hi)),
                     'action_out_of_bounds_fraction':jnp.mean((bounded(raw)<action_lo)|(bounded(raw)>action_hi)),
-                    'saturation_penalty':jnp.mean(jax.nn.relu(jnp.abs(raw)-a.saturation_threshold)**2),
-                    'router_entropy':-(route*jnp.log(route+1e-8)).sum(-1).mean(),
-                    **{f'expert_{i}_usage':usage[i] for i in range(4)}}
+                    'replay_action_out_of_bounds_fraction':jnp.mean((b['a']<action_lo)|(b['a']>action_hi)),
+                    'saturation_penalty':jnp.mean(jax.nn.relu(jnp.abs(raw)-a.saturation_threshold)**2)}
+            if a.idea=='experts':
+                route=wm.apply(w,normx(xx),method=wm.routing)
+                usage=route.mean(0)
+                metrics.update({'router_entropy':-(route*jnp.log(route+1e-8)).sum(-1).mean(),
+                                **{f'expert_{i}_usage':usage[i] for i in range(4)}})
+            return metrics
         return {}
     for it in range(start_iteration,a.iterations):
         iteration_start=time.perf_counter()
@@ -509,8 +522,8 @@ def main():
             directions=idea_rng.normal(size=(a.num_envs,ad.na)).astype(np.float32)
             directions/=np.maximum(np.linalg.norm(directions,axis=-1,keepdims=True),1e-8)
             perturb=a.sensitivity_epsilon*(action_hi-action_lo)/2*jnp.asarray(directions)
-            ap=jnp.clip(center+perturb,action_lo,action_hi)
-            am=jnp.clip(center-perturb,action_lo,action_hi)
+            ap=executed_action(center,action_lo,action_hi,perturb)
+            am=executed_action(center,action_lo,action_hi,-perturb)
             plus=ad.step(state,ap)[1]
             minus=ad.step(state,am)[1]
             yp,ym=np.asarray(plus[0]),np.asarray(minus[0])
@@ -534,7 +547,7 @@ def main():
                 assert np.linalg.norm(yp[valid]-ym[valid])>0,'Perturbed actions must affect simulated states'
         # UTD 0.4: alternate 3 and 2 vectorized simulator steps per iteration.
         for _ in range(3 if it%2==0 else 2):
-            action=jnp.clip(actor(pp,h,tid,f)+.1*jax.random.normal(nextkey(),(a.num_envs,ad.na)),action_lo,action_hi)
+            action=executed_action(actor(pp,h,tid,f),action_lo,action_hi,.1*jax.random.normal(nextkey(),(a.num_envs,ad.na)))
             bc=state.bad_count;state,tr=ad.train_step(state,action,jnp.asarray(curriculum.probs))
             xn,tn,fn,rr,ab,dd,valid=tr
             replay.add(x=x,x1=xn,a=action,tid=tid,f=f,r=rr,absorbing=ab,done=dd,h=h,valid=valid,bad_count=bc)

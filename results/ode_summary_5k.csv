@@ -1,0 +1,9 @@
+method,seed,step,transitions,return_mean,error_m,failures,numerical_failures,episodes,evaluation_file
+Tanh + Full-State ODE Euler,42,5000,51200000,932.5373806018822,0.08416378535963161,0,0,160,ode_euler_seed42_iter5000.json
+Tanh + Full-State ODE Euler,43,5000,51200000,878.7063506182916,0.08175713471834313,15,0,160,ode_euler_seed43_iter5000.json
+Tanh + Full-State ODE Euler,44,5000,51200000,921.4061140226462,0.08097977731932345,0,0,160,ode_euler_seed44_iter5000.json
+Tanh + Full-State ODE Euler + Anti-Saturation,42,5000,51200000,914.577735107574,0.08497915391735214,1,0,160,ode_euler_as_seed42_iter5000.json
+Tanh + Full-State ODE Euler + Anti-Saturation,43,5000,51200000,935.3817658723399,0.08161809657658155,0,0,160,ode_euler_as_seed43_iter5000.json
+Tanh + Full-State ODE Euler + Anti-Saturation,44,5000,51200000,928.356300921651,0.08096578646237895,0,0,160,ode_euler_as_seed44_iter5000.json
+Tanh + Full-State ODE Midpoint,42,5000,51200000,935.2767854348967,0.07829982625936367,0,0,160,ode_midpoint_seed42_iter5000.json
+Tanh + Full-State ODE Midpoint + Anti-Saturation,42,5000,51200000,931.5251627511734,0.0800146002505273,1,0,160,ode_midpoint_as_seed42_iter5000.json
